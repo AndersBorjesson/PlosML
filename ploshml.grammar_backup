@@ -1,0 +1,61 @@
+package "ploshml"
+
+EndExpr
+    : NormalExpr
+    | StructuralExpr
+    | PragmaExpr
+    | AliasExpr
+    ;
+
+NormalExpr 
+    :   key_component Dualsidedkey key_component
+    | KeyExpr Dualsidedkey KeyExpr
+    | NormalExpr Dualsidedkey KeyExpr
+    | StructuralExpr Dualsidedkey KeyExpr
+ ;
+
+StructuralExpr 
+    :   Structural key_component 
+    ;
+
+
+
+PragmaExpr 
+    : Pragma key_component;
+
+AliasExpr
+    : key_component Alias key_component
+    ;
+
+AttributeExpr
+    : key_component Attribute key_component
+    ;
+
+KeyExpr
+    : key_component
+    | key_component Separator
+    | KeyExpr Separator
+    ;
+
+Separator : ",";
+
+key_component : {letter | number | '_'} ;
+
+Structural : "zoomin"  | "subroutine"  | "class"; 
+
+Dualsidedkey 
+    : "triggers"  
+    | "handles"  
+    | "owns"
+    | "relates"
+    | "requires"
+    | "->"
+    | ">-"
+    | "-<"
+    | "<-";
+
+Attribute : "is";
+
+Alias : "as" ;
+
+Pragma : "#pragma";

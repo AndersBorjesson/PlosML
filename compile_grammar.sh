@@ -1,0 +1,1 @@
+~/go/bin/gogll -a -pager ploshml.grammar
