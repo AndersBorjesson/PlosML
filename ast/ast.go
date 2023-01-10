@@ -18,8 +18,14 @@ type Outdata struct {
 }
 
 type ParserOut struct {
-	Typ    string
-	Normal []Outdata
+	Typ        string
+	Normal     []Outdata
+	Structural StructuralOut
+}
+
+type StructuralOut struct {
+	Operator string
+	Name     string
 }
 
 // G0 : EndExpr ;
@@ -30,8 +36,10 @@ func G00(p0 interface{}) (interface{}, error) {
 
 // EndExpr : StructuralExpr ;
 func EndExpr0(p0 interface{}) (interface{}, error) {
-	fmt.Println("ast.EndExpr0 is unimplemented")
-	return nil, nil
+	var yield ParserOut
+	yield.Typ = "structural"
+	yield.Structural = p0.(StructuralOut)
+	return yield, nil
 }
 
 // EndExpr : key_component Alias key_component ;
@@ -75,8 +83,11 @@ func EndExpr6(p0 interface{}) (interface{}, error) {
 
 // StructuralExpr : Structural key_component ;
 func StructuralExpr0(p0, p1 interface{}) (interface{}, error) {
-	fmt.Println("ast.StructuralExpr0 is unimplemented")
-	return nil, nil
+
+	var yield StructuralOut
+	yield.Operator = p0.(string)
+	yield.Name = p1.(*token.Token).LiteralString()
+	return yield, nil
 }
 
 // NormalExpr : KeyExpr Dualsidedkey key_component ;
