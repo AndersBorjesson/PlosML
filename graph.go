@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/iterator"
 	"gonum.org/v1/gonum/graph/simple"
+	"gonum.org/v1/gonum/graph/topo"
 )
 
 type GraphNode struct {
@@ -200,6 +203,15 @@ func (g *GraphNode) HasEdgeBetween(uid, vid int64) bool {
 	return g.EdgeBetween(uid, vid) != nil
 }
 
+func (g *GraphNode) HasEdgeFromTo(uid, vid int64) bool {
+	// return g.EdgeBetween(uid, vid) != nil
+	return false
+}
+func (g *GraphNode) To(id int64) graph.Nodes {
+	var A graph.Nodes
+	return A
+}
+
 // Edge allows GraphNode to satisfy the graph.Graph interface.
 func (g *GraphNode) Edge(uid, vid int64) graph.Edge {
 	return g.EdgeBetween(uid, vid)
@@ -285,4 +297,108 @@ func (g *GraphNode) AddNeighbor(n *GraphNode) {
 // AddRoot adds provides an entrance into the graph g from n.
 func (g *GraphNode) AddRoot(n *GraphNode) {
 	g.roots = append(g.roots, n)
+}
+
+// // graph G {
+// G := NewGraphNode(0)
+// // 	e
+// // e := NewGraphNode(1)
+
+// // // 	subgraph clusterA {
+// // clusterA := NewGraphNode(2)
+// // // 		a -- b
+// // a := NewGraphNode(3)
+// // b := NewGraphNode(4)
+// // a.AddNeighbor(b)
+// // b.AddNeighbor(a)
+// // clusterA.AddRoot(a)
+// // clusterA.AddRoot(b)
+
+// // // 		subgraph clusterC {
+// // clusterC := NewGraphNode(5)
+// // // 			C -- D
+// // C := NewGraphNode(6)
+// // D := NewGraphNode(7)
+// // C.AddNeighbor(D)
+// // D.AddNeighbor(C)
+
+// // clusterC.AddRoot(C)
+// // clusterC.AddRoot(D)
+// // // 		}
+// // clusterA.AddRoot(clusterC)
+// // // 	}
+
+// // // 	subgraph clusterB {
+// // clusterB := NewGraphNode(8)
+// // // 		d -- f
+// // d := NewGraphNode(9)
+// // f := NewGraphNode(10)
+// // d.AddNeighbor(f)
+// // f.AddNeighbor(d)
+// // clusterB.AddRoot(d)
+// // clusterB.AddRoot(f)
+func build_graph() {
+	G := NewGraphNode(0)
+	// 	e
+	e := NewGraphNode(1)
+
+	// 	subgraph clusterA {
+	clusterA := NewGraphNode(2)
+	// 		a -- b
+	a := NewGraphNode(3)
+	b := NewGraphNode(4)
+	a.AddNeighbor(b)
+	b.AddNeighbor(a)
+	clusterA.AddRoot(a)
+	clusterA.AddRoot(b)
+
+	// 		subgraph clusterC {
+	clusterC := NewGraphNode(5)
+	// 			C -- D
+	C := NewGraphNode(6)
+	D := NewGraphNode(7)
+	C.AddNeighbor(D)
+	D.AddNeighbor(C)
+
+	clusterC.AddRoot(C)
+	clusterC.AddRoot(D)
+	// 		}
+	clusterA.AddRoot(clusterC)
+	// 	}
+
+	// 	subgraph clusterB {
+	clusterB := NewGraphNode(8)
+	// 		d -- f
+	d := NewGraphNode(9)
+	f := NewGraphNode(10)
+	d.AddNeighbor(f)
+	f.AddNeighbor(d)
+	clusterB.AddRoot(d)
+	clusterB.AddRoot(f)
+	// 	}
+
+	// 	d -- D
+	d.AddNeighbor(D)
+	D.AddNeighbor(d)
+
+	// 	e -- clusterB
+	e.AddNeighbor(clusterB)
+	clusterB.AddNeighbor(e)
+
+	// 	clusterC -- clusterB
+	clusterC.AddNeighbor(clusterB)
+	clusterB.AddNeighbor(clusterC)
+
+	G.AddRoot(e)
+	G.AddRoot(clusterA)
+	G.AddRoot(clusterB)
+	fmt.Println(topo.IsPathIn(G, []graph.Node{C, D, d, f}))
+	S, _ := topo.Sort(G)
+	fmt.Println(S)
+	if topo.IsPathIn(G, []graph.Node{C, D, d, f}) {
+		fmt.Println("C--D--d--f is a path in G.")
+		// S, _ := topo.Sort(G)
+		// fmt.Println(S)
+	}
+	// }
 }

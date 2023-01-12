@@ -21,11 +21,17 @@ type ParserOut struct {
 	Typ        string
 	Normal     []Outdata
 	Structural StructuralOut
+	Call       CallOut
 }
 
 type StructuralOut struct {
 	Operator string
 	Name     string
+}
+
+type CallOut struct {
+	Caller string
+	Calle  string
 }
 
 // G0 : EndExpr ;
@@ -64,7 +70,12 @@ func EndExpr3(p0, p1, p2 interface{}) (interface{}, error) {
 func EndExpr4(p0, p1, p2, p3 interface{}) (interface{}, error) {
 	fmt.Println("ast.EndExpr4 is unimplemented")
 	fmt.Println(p1.(*token.Token).LiteralString())
-	return nil, nil
+	Call := CallOut{Calle: p1.(*token.Token).LiteralString(),
+		Caller: p3.(*token.Token).LiteralString()}
+	yield := ParserOut{Typ: "call",
+		Call: Call}
+	// os.Exit(3)
+	return yield, nil
 }
 
 // EndExpr : NormalExpr ;

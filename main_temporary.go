@@ -227,7 +227,7 @@ func makegv(relations []Relation, items []Item) {
 		e, _ := graph.CreateEdge("", nodes[l1.From], nodes[l1.To])
 		e.SetArrowHead("none")
 		// fmt.Println(l1.Typ)
-		fmt.Println(heads[l1.Typ], tails[l1.Typ])
+		// fmt.Println(heads[l1.Typ], tails[l1.Typ])
 		e.SetArrowHead(heads[l1.Typ])
 		e.SetArrowTail(tails[l1.Typ])
 	}
@@ -236,17 +236,6 @@ func makegv(relations []Relation, items []Item) {
 
 	gv.RenderFilename(graph, graphviz.PNG, "graph.png")
 
-}
-
-func build_graph() {
-	A := simple.DirectedGraph{}
-	// K := simple.DirectedGraph{}
-	// A.AddNode(K)
-	B := A.NewNode()
-	C := A.NewNode()
-	fmt.Println(B.ID())
-	D := A.NewEdge(B, C)
-	fmt.Println(D)
 }
 
 // func main() {

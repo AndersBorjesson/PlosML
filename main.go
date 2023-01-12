@@ -198,20 +198,24 @@ type Stack struct {
 	Inds            []int
 	Used            []bool
 	Name            string
+	Relations       *[]Relation
+	Items           *[]Item
 }
 
 func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
 	i_max := len(*yield)
 	for i := istart; i < i_max; i++ {
-		fmt.Println(i, istart, i_max)
+		fmt.Println(s.Expected_indent, i, istart, i_max, (*yield)[i].Typ)
 		if (*yield)[i].Typ == "structural" {
+
 			if (*pp)[i].PossibleOwner {
 				var tmp Stack
 				name := (*yield)[i].Structural.Name
 				(*s.Structurals)[name] = append((*s.Structurals)[name], (*yield)[i])
+				fmt.Println("NAME : ", name, (*pp)[i].Owner, s.Expected_indent)
 				tmp.Structurals = s.Structurals
-				tmp.Expected_indent = (*pp)[i+1].Owner
-
+				tmp.Expected_indent = (*pp)[i+1].IndentID
+				tmp.Entry_indent = (*pp)[i].Owner
 				tmp.Name = name
 				(*pp)[i].Used = true
 				tmp.derive_structurals(i+1, yield, pp)
@@ -223,9 +227,17 @@ func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]pre
 			name := s.Name
 
 			if name != "" {
-				if (*pp)[i].Owner == s.Expected_indent {
+				if (*pp)[i].IndentID == s.Expected_indent {
 					(*pp)[i].Used = true
 					(*s.Structurals)[name] = append((*s.Structurals)[name], (*yield)[i])
+				} else if (*pp)[i].Owner != s.Expected_indent {
+					break
+				} else {
+					fmt.Println("Handle error here, this should not happen unless syntax error")
+					fmt.Println(name)
+					fmt.Println((*pp)[i].Owner, s.Expected_indent)
+					fmt.Println((*pp)[i].PossibleOwner)
+					os.Exit(2)
 				}
 			}
 
@@ -254,65 +266,48 @@ func (s *Stack) FixResidual(yield *[]ast.ParserOut, pp *[]preprocessor.LineType)
 		}
 	}
 }
-func derive_structurals_bc(yield []ast.ParserOut, pp []preprocessor.LineType) {
-	structurals := make(map[string][]ast.ParserOut)
-	//var s Stack
-	//s.Structurals = &structurals
-	// s.derive_structurals(sum_yield, filecontent)
-	// var outyield []ast.ParserOut
-	var inds []int
-	used := []bool{}
-	for i, l1 := range yield {
-		used = append(used, false)
-		if l1.Typ == "structural" {
-			if pp[i].PossibleOwner {
-				inds = append(inds, i)
-			} else {
-				fmt.Println("Structural with wrong indentation, raise error here")
+
+func (s *Stack) ExpandAll() {
+	s.ExpandStructure("BaseContent")
+	for _, l1 := range *s.Structurals {
+		if l1[0].Typ == "structural" {
+			fmt.Println(l1[0].Typ, l1[0].Structural.Name)
+			if l1[0].Structural.Operator == "zoomin" {
+				s.ExpandStructure(l1[0].Structural.Name)
 			}
 		}
 	}
-	for _, l1 := range inds {
-		broken := true
-		iadd := 0
-
-		name := yield[l1].Structural.Name
-		expected_label := pp[l1+1].Owner
-		structurals[name] = append(structurals[name], yield[l1])
-		used[l1+iadd] = true
-		for broken {
-			iadd += 1
-			cond1 := pp[l1+iadd].Owner == expected_label
-			cond2 := used[l1+iadd] == false
-			if cond1 && cond2 {
-				used[l1+iadd] = true
-				structurals[name] = append(structurals[name], yield[l1+iadd])
-			} else {
-				broken = false
-				fmt.Println(l1, name, used)
-			}
-		}
-
-	}
-	// ind := -1
-	// for _, l1 := range inds {
-	// 	if
-	// }
-
 }
-func ExpandStructure(sin map[string][]ast.ParserOut) {
-	// yield := []ast.Outdata{}
-	for _, l1 := range sin["BaseContent"] {
-		if l1.Typ == "normal" {
-			for _, l2 := range l1.Normal {
-				fmt.Println(l2)
+func (s *Stack) ExpandStructure(entrykey string) {
+
+	for _, y := range (*s.Structurals)[entrykey] {
+		if y.Typ == "normal" {
+			for _, ly := range y.Normal {
+				for _, lhs := range ly.Lhs {
+					add_item(s.Items, lhs)
+
+					for _, rhs := range ly.Rhs {
+						add_item(s.Items, rhs)
+						fmt.Println(entrykey, lhs, rhs)
+						add_relation(s.Relations, lhs, rhs, ly.Operator)
+					}
+				}
+
 			}
+
+		} else if y.Typ == "call" {
+			tmp := Stack{Structurals: s.Structurals,
+				Relations: s.Relations,
+				Items:     s.Items}
+
+			tmp.ExpandStructure(y.Call.Calle)
 		}
 	}
+
 }
 func main() {
-	build_graph()
-
+	// build_graph()
+	// os.Exit(2)
 	if false {
 		about()
 	}
@@ -347,15 +342,19 @@ func main() {
 	// fmt.Println(sum_yield)
 	var s Stack
 	s.Expected_indent = 0
+	s.Entry_indent = -1
 	s.Structurals = &map[string][]ast.ParserOut{}
+	s.Relations = &[]Relation{}
+	s.Items = &[]Item{}
 	s.derive_structurals(0, &sum_yield, &filecontent)
 	s.FixResidual(&sum_yield, &filecontent)
-	ExpandStructure(*s.Structurals)
-	os.Exit(2)
+	s.ExpandAll()
+
+	// os.Exit(2)
 	// derive_structurals(sum_yield, filecontent)
-	relations, items := derive_structure(sum_yield)
-	derive_types(relations, &items)
-	makegv(relations, items)
-	fmt.Println(items)
+	// relations, items := derive_structure(sum_yield)
+	derive_types(*s.Relations, s.Items)
+	makegv(*s.Relations, *s.Items)
+	// fmt.Println(items)
 	//// makegraphviz()
 }

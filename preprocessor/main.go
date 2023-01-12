@@ -20,6 +20,7 @@ type LineType struct {
 	PossibleOwner bool
 	Owner         int
 	Used          bool
+	IndentID      int
 }
 
 type ErrorType struct {
@@ -107,6 +108,7 @@ func (s Preprocessor) IndentCheck() {
 		(*s.Textstack)[i].NonEmpty = len(tmp) > 0
 		(*s.Textstack)[i].PossibleOwner = false
 		(*s.Textstack)[i].Owner = 0
+		(*s.Textstack)[i].IndentID = 0
 	}
 
 }
@@ -123,28 +125,42 @@ func (s Preprocessor) CleanEmpty() {
 
 func (s Preprocessor) Check_ownership() {
 	owner := []int{0}
+	indentID := []int{0}
+	id_now := 0
 	for i, _ := range *s.Textstack {
 		if (*s.Textstack)[i].NonEmpty {
 			if i < (len(*s.Textstack) - 1) {
 				if (*s.Textstack)[i].Indent < (*s.Textstack)[i+1].Indent {
 					owner = append(owner, owner[len(owner)-1]+1)
+					id_now++
+					indentID = append(indentID, id_now)
 					(*s.Textstack)[i].PossibleOwner = true
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
+					(*s.Textstack)[i+1].IndentID = indentID[len(owner)-1]
+
 				} else if (*s.Textstack)[i].Indent == (*s.Textstack)[i+1].Indent {
 					(*s.Textstack)[i].PossibleOwner = false
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
+					(*s.Textstack)[i+1].IndentID = indentID[len(indentID)-1]
+
 				} else if (*s.Textstack)[i].Indent > (*s.Textstack)[i+1].Indent {
+					delta := (*s.Textstack)[i].Indent - (*s.Textstack)[i+1].Indent
+
 					(*s.Textstack)[i].PossibleOwner = false
-					owner = owner[0:(len(owner) - 1)]
+					owner = owner[0:(len(owner) - delta)]
+					indentID = indentID[0:(len(indentID) - delta)]
+
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
+					(*s.Textstack)[i+1].IndentID = indentID[len(owner)-1]
 				} else {
 					fmt.Println("This should never happen")
 					os.Exit(2)
 				}
 			}
 		}
-		fmt.Println((*s.Textstack)[i].Text, (*s.Textstack)[i].PossibleOwner, (*s.Textstack)[i].Owner)
+		fmt.Println((*s.Textstack)[i].Text, (*s.Textstack)[i].PossibleOwner, (*s.Textstack)[i].Owner, (*s.Textstack)[i].IndentID)
 	}
+
 }
 func flagparser() string {
 
