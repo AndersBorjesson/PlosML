@@ -40,13 +40,13 @@ type Relation struct {
 	Typ  string
 }
 
-func add_item(r *[]Item, item ast.KeyItem) {
+func add_item(r *[]Item, item ast.KeyItem, name string) {
 	var tmp Item
-	tmp.Name = item.Name
+	tmp.Name = name + item.Name
 	tmp.Attributes = item.Attribute
 	*r = append(*r, tmp)
 }
-func add_relation(r *[]Relation, lhs, rhs ast.KeyItem, operator string) {
+func add_relation(r *[]Relation, lhs, rhs ast.KeyItem, operator, name string) {
 	var tmp Relation
 	forward := true
 	realoperator := operator
@@ -62,36 +62,37 @@ func add_relation(r *[]Relation, lhs, rhs ast.KeyItem, operator string) {
 		realoperator = operator
 	}
 	if forward {
-		tmp.From = lhs.Name
-		tmp.To = rhs.Name
+		tmp.From = name + lhs.Name
+		tmp.To = name + rhs.Name
 
 	} else {
-		tmp.From = rhs.Name
-		tmp.To = lhs.Name
+		tmp.From = name + rhs.Name
+		tmp.To = name + lhs.Name
 	}
 	tmp.Typ = realoperator
 	*r = append(*r, tmp)
 }
-func derive_structure(raw []ast.ParserOut) ([]Relation, []Item) {
-	var relations []Relation
-	var items []Item
-	for _, y := range raw {
-		if y.Typ == "normal" {
-			for _, ly := range y.Normal {
-				for _, lhs := range ly.Lhs {
-					add_item(&items, lhs)
-					for _, rhs := range ly.Rhs {
-						add_item(&items, rhs)
-						add_relation(&relations, lhs, rhs, ly.Operator)
-					}
-				}
 
-			}
+// func derive_structure(raw []ast.ParserOut) ([]Relation, []Item) {
+// 	var relations []Relation
+// 	var items []Item
+// 	for _, y := range raw {
+// 		if y.Typ == "normal" {
+// 			for _, ly := range y.Normal {
+// 				for _, lhs := range ly.Lhs {
+// 					add_item(&items, lhs)
+// 					for _, rhs := range ly.Rhs {
+// 						add_item(&items, rhs)
+// 						add_relation(&relations, lhs, rhs, ly.Operator)
+// 					}
+// 				}
 
-		}
-	}
-	return relations, items
-}
+// 			}
+
+//			}
+//		}
+//		return relations, items
+//	}
 func check_file_exists(filename string) (bool, error) {
 
 	_, err := os.Stat(filename)
@@ -200,6 +201,7 @@ type Stack struct {
 	Name            string
 	Relations       *[]Relation
 	Items           *[]Item
+	OwnerList       []string
 }
 
 func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
@@ -279,17 +281,21 @@ func (s *Stack) ExpandAll() {
 	}
 }
 func (s *Stack) ExpandStructure(entrykey string) {
+	name := strings.Join(s.OwnerList, ".")
+	if name != "" {
+		name = name + "."
+	}
 
 	for _, y := range (*s.Structurals)[entrykey] {
 		if y.Typ == "normal" {
 			for _, ly := range y.Normal {
 				for _, lhs := range ly.Lhs {
-					add_item(s.Items, lhs)
+					add_item(s.Items, lhs, name)
 
 					for _, rhs := range ly.Rhs {
-						add_item(s.Items, rhs)
-						fmt.Println(entrykey, lhs, rhs)
-						add_relation(s.Relations, lhs, rhs, ly.Operator)
+						add_item(s.Items, rhs, name)
+						fmt.Println(entrykey, lhs, rhs, name)
+						add_relation(s.Relations, lhs, rhs, ly.Operator, name)
 					}
 				}
 
@@ -298,7 +304,8 @@ func (s *Stack) ExpandStructure(entrykey string) {
 		} else if y.Typ == "call" {
 			tmp := Stack{Structurals: s.Structurals,
 				Relations: s.Relations,
-				Items:     s.Items}
+				Items:     s.Items,
+				OwnerList: append(s.OwnerList, y.Call.Caller)}
 
 			tmp.ExpandStructure(y.Call.Calle)
 		}
@@ -346,6 +353,7 @@ func main() {
 	s.Structurals = &map[string][]ast.ParserOut{}
 	s.Relations = &[]Relation{}
 	s.Items = &[]Item{}
+	s.OwnerList = []string{}
 	s.derive_structurals(0, &sum_yield, &filecontent)
 	s.FixResidual(&sum_yield, &filecontent)
 	s.ExpandAll()

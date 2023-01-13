@@ -176,10 +176,10 @@ func tmpmain() {
 func getarrows() (map[string]cgraph.ArrowType, map[string]cgraph.ArrowType) {
 
 	heads := map[string]cgraph.ArrowType{
-		"triggers":    "none",
+		"triggers":    "dot",
 		"handles":     "dot",
 		"relates":     "none",
-		"requires":    "odot",
+		"requires":    "none",
 		"aggregates":  "none",
 		"implements":  "none",
 		"exhibits":    "none",
@@ -192,7 +192,7 @@ func getarrows() (map[string]cgraph.ArrowType, map[string]cgraph.ArrowType) {
 		"triggers":    "none",
 		"handles":     "none",
 		"relates":     "none",
-		"requires":    "none",
+		"requires":    "odot",
 		"aggregates":  "none",
 		"implements":  "none",
 		"exhibits":    "none",
@@ -207,6 +207,7 @@ func getarrows() (map[string]cgraph.ArrowType, map[string]cgraph.ArrowType) {
 func makegv(relations []Relation, items []Item) {
 	gv := graphviz.New()
 	graph, _ := gv.Graph()
+
 	nodes := make(map[string]*cgraph.Node)
 	heads, tails := getarrows()
 	for _, l1 := range items {
@@ -225,11 +226,15 @@ func makegv(relations []Relation, items []Item) {
 	}
 	for _, l1 := range relations {
 		e, _ := graph.CreateEdge("", nodes[l1.From], nodes[l1.To])
+		e.SetDir("both")
 		e.SetArrowHead("none")
 		// fmt.Println(l1.Typ)
 		// fmt.Println(heads[l1.Typ], tails[l1.Typ])
 		e.SetArrowHead(heads[l1.Typ])
 		e.SetArrowTail(tails[l1.Typ])
+		if l1.Typ == "triggers" {
+			e.SetHeadLabel("e")
+		}
 	}
 	gv2 := graph.SubGraph("cluster_AAA", 2)
 	gv2.CreateNode("Klasse")
