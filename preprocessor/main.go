@@ -21,6 +21,7 @@ type LineType struct {
 	Owner         int
 	Used          bool
 	IndentID      int
+	OwnerID       int
 }
 
 type ErrorType struct {
@@ -132,11 +133,13 @@ func (s Preprocessor) Check_ownership() {
 			if i < (len(*s.Textstack) - 1) {
 				if (*s.Textstack)[i].Indent < (*s.Textstack)[i+1].Indent {
 					owner = append(owner, owner[len(owner)-1]+1)
+					fmt.Println("OWNER", owner)
 					id_now++
 					indentID = append(indentID, id_now)
 					(*s.Textstack)[i].PossibleOwner = true
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
 					(*s.Textstack)[i+1].IndentID = indentID[len(owner)-1]
+					(*s.Textstack)[i].OwnerID = indentID[len(owner)-1]
 
 				} else if (*s.Textstack)[i].Indent == (*s.Textstack)[i+1].Indent {
 					(*s.Textstack)[i].PossibleOwner = false
@@ -145,13 +148,15 @@ func (s Preprocessor) Check_ownership() {
 
 				} else if (*s.Textstack)[i].Indent > (*s.Textstack)[i+1].Indent {
 					delta := (*s.Textstack)[i].Indent - (*s.Textstack)[i+1].Indent
-
+					fmt.Println("DELTA", delta, owner, indentID)
 					(*s.Textstack)[i].PossibleOwner = false
 					owner = owner[0:(len(owner) - delta)]
-					indentID = indentID[0:(len(indentID) - delta)]
 
+					indentID = indentID[0:(len(indentID) - delta)]
+					fmt.Println("DELTA", delta, owner, indentID)
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
 					(*s.Textstack)[i+1].IndentID = indentID[len(owner)-1]
+					fmt.Println("DELTA", delta, owner, indentID)
 				} else {
 					fmt.Println("This should never happen")
 					os.Exit(2)

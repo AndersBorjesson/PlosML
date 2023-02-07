@@ -1,7 +1,6 @@
 package language_parser
 
 import (
-	"fmt"
 	"ploshml/language_parser/ast"
 	"ploshml/language_parser/lexer"
 	"ploshml/language_parser/parser"
@@ -15,7 +14,7 @@ func DoParse(filecontent []preprocessor.LineType) ([]ast.ParserOut, []error) {
 		lex := lexer.New([]rune(l1.Text))
 
 		yield, err := parser.New(lex).Parse()
-		fmt.Println(yield)
+		// fmt.Println(yield)
 		if err != nil {
 			errors = append(errors, err)
 		} else {

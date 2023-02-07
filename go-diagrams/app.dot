@@ -1,0 +1,17 @@
+digraph root {
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=13;
+	label=App;
+	nodesep=0.6;
+	pad=2;
+	rankdir=LR;
+	ranksep=0.75;
+	splines=ortho;
+	dggomizi->rzbbvecl[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	dggomizi [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/load-balancing.png", imagescale=true, label=NLB, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	qvnzanpl [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/dns.png", imagescale=true, label=DNSen, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	rzbbvecl [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/database/memorystore.png", imagescale=true, label=Cache, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	xqtxgqkz [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/database/sql.png", imagescale=true, label=Database, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}

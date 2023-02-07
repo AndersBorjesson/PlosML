@@ -69,8 +69,8 @@ func EndExpr3(p0, p1, p2 interface{}) (interface{}, error) {
 
 // EndExpr : Call key_component Alias key_component ;
 func EndExpr4(p0, p1, p2, p3 interface{}) (interface{}, error) {
-	fmt.Println("ast.EndExpr4 is unimplemented")
-	fmt.Println(p1.(*token.Token).LiteralString())
+	// fmt.Println("ast.EndExpr4 is unimplemented")
+	// fmt.Println(p1.(*token.Token).LiteralString())
 	Call := CallOut{Calle: p1.(*token.Token).LiteralString(),
 		Caller: p3.(*token.Token).LiteralString()}
 	yield := ParserOut{Typ: "call",

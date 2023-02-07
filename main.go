@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"ploshml/ast"
-	"ploshml/lexer"
-	"ploshml/parser"
+	"ploshml/language_parser"
+	"ploshml/language_parser/ast"
 	"ploshml/preprocessor"
 	"strings"
 	// "github.com/dominikbraun/graph"
@@ -101,7 +100,7 @@ func check_file_exists(filename string) (bool, error) {
 		return true, nil
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		fmt.Printf("File %s does not exist", filename)
+		fmt.Printf("File %s does not exist\n", filename)
 		return false, nil
 	}
 	return false, err
@@ -162,7 +161,7 @@ func derive_types(relations []Relation, items *[]Item) {
 	for l1, val := range itemtypes {
 		unknown := allSameStrings(val) == false
 		if unknown {
-			fmt.Printf("Type of item %s is ambiguous", l1)
+			fmt.Printf("Type of item %s is ambiguous\n", l1)
 			unknowns = true
 		}
 	}
@@ -202,22 +201,37 @@ type Stack struct {
 	Relations       *[]Relation
 	Items           *[]Item
 	OwnerList       []string
+	OwnerID         int
 }
 
 func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
 	i_max := len(*yield)
 	for i := istart; i < i_max; i++ {
-		fmt.Println(s.Expected_indent, i, istart, i_max, (*yield)[i].Typ)
+		// fmt.Println(s.Expected_indent, i, istart, i_max, (*yield)[i].Typ)
 		if (*yield)[i].Typ == "structural" {
 
 			if (*pp)[i].PossibleOwner {
+				// (*s.Structurals)[name] = append((*s.Structurals)[name], (*yield)[i])
+				if (*yield)[i].Structural.Operator == "zoomin" {
+					tmp := ast.CallOut{
+						Caller: (*yield)[i].Structural.Name,
+						Calle:  (*yield)[i].Structural.Name}
+
+					tmp2 := ast.ParserOut{Typ: "call",
+						Call: tmp,
+					}
+					name := s.Name
+					// fmt.Println("The name is ", name)
+					(*s.Structurals)[name] = append((*s.Structurals)[name], tmp2)
+				}
 				var tmp Stack
 				name := (*yield)[i].Structural.Name
 				(*s.Structurals)[name] = append((*s.Structurals)[name], (*yield)[i])
-				fmt.Println("NAME : ", name, (*pp)[i].Owner, s.Expected_indent)
+				// fmt.Println("NAME : ", name, (*pp)[i].Owner, s.Expected_indent)
 				tmp.Structurals = s.Structurals
 				tmp.Expected_indent = (*pp)[i+1].IndentID
 				tmp.Entry_indent = (*pp)[i].Owner
+				tmp.OwnerID = (*pp)[i].OwnerID
 				tmp.Name = name
 				(*pp)[i].Used = true
 				tmp.derive_structurals(i+1, yield, pp)
@@ -229,16 +243,19 @@ func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]pre
 			name := s.Name
 
 			if name != "" {
-				if (*pp)[i].IndentID == s.Expected_indent {
+				fmt.Println("HERE", (*pp)[i])
+				if (*pp)[i].IndentID == s.OwnerID {
 					(*pp)[i].Used = true
 					(*s.Structurals)[name] = append((*s.Structurals)[name], (*yield)[i])
-				} else if (*pp)[i].Owner != s.Expected_indent {
+				} else if (*pp)[i].IndentID != s.OwnerID {
+					fmt.Println("Breaking ", (*pp)[i], s.OwnerID)
 					break
 				} else {
 					fmt.Println("Handle error here, this should not happen unless syntax error")
 					fmt.Println(name)
-					fmt.Println((*pp)[i].Owner, s.Expected_indent)
+					fmt.Println((*pp)[i].Owner, s.Expected_indent, (*pp)[i].IndentID)
 					fmt.Println((*pp)[i].PossibleOwner)
+					fmt.Println((*pp)[i])
 					os.Exit(2)
 				}
 			}
@@ -251,13 +268,15 @@ func (s *Stack) FixResidual(yield *[]ast.ParserOut, pp *[]preprocessor.LineType)
 	expected := -1
 	i_max := len(*yield)
 	for i := 0; i < i_max; i++ {
-
+		// fmt.Println((*pp)[i], expected)
 		if (*pp)[i].Used == false {
 			if expected == -1 {
-				expected = (*pp)[i].Owner
+				expected = (*pp)[i].OwnerID
 			} else {
-				if (*pp)[i].Owner != expected {
+				if (*pp)[i].IndentID != expected {
 					fmt.Println("Error here, unexpected indent")
+					fmt.Println((*pp)[i-1], expected)
+					fmt.Println((*pp)[i])
 				}
 			}
 		}
@@ -274,9 +293,9 @@ func (s *Stack) ExpandAll() {
 	for _, l1 := range *s.Structurals {
 		if l1[0].Typ == "structural" {
 			fmt.Println(l1[0].Typ, l1[0].Structural.Name)
-			if l1[0].Structural.Operator == "zoomin" {
-				s.ExpandStructure(l1[0].Structural.Name)
-			}
+			// if l1[0].Structural.Operator == "zoomin" {
+			// 	s.ExpandStructure(l1[0].Structural.Name)
+			// }
 		}
 	}
 }
@@ -294,7 +313,7 @@ func (s *Stack) ExpandStructure(entrykey string) {
 
 					for _, rhs := range ly.Rhs {
 						add_item(s.Items, rhs, name)
-						fmt.Println(entrykey, lhs, rhs, name)
+						// fmt.Println(entrykey, lhs, rhs, name)
 						add_relation(s.Relations, lhs, rhs, ly.Operator, name)
 					}
 				}
@@ -312,13 +331,36 @@ func (s *Stack) ExpandStructure(entrykey string) {
 	}
 
 }
+
+// func do_parse(filecontent []preprocessor.LineType) ([]ast.ParserOut, []error) {
+// 	var sum_yield []ast.ParserOut
+// 	var errors []error
+// 	for _, l1 := range filecontent {
+// 		lex := lexer.New([]rune(l1.Text))
+
+// 		yield, err := parser.New(lex).Parse()
+// 		fmt.Println(yield)
+// 		if err != nil {
+// 			errors = append(errors, err)
+// 		} else {
+// 			sum_yield = append(sum_yield, yield.(ast.ParserOut))
+// 		}
+// 	}
+// 	return sum_yield, errors
+// }
+
 func main() {
-	// build_graph()
+	//
+	ASW()
+	os.Exit(2)
+	in_flags := parse_flags()
+	// fmt.Println(in_flags)
 	// os.Exit(2)
 	if false {
 		about()
 	}
-	filename := "ploshml_input_test.opa"
+	filename := in_flags.infile
+	// Preprocessing
 	preproc := preprocessor.Preprocessor{Filename: filename}
 	preproc.Textstack = &[]preprocessor.LineType{}
 	preproc.Errorstack = &[]preprocessor.ErrorType{}
@@ -326,43 +368,30 @@ func main() {
 	preproc.IndentCheck()
 	preproc.CleanEmpty()
 	preproc.Check_ownership()
-
-	// filecontent, _ := ReadFile(filename)
 	filecontent := *preproc.Textstack
-	for _, l1 := range filecontent {
-		fmt.Println(l1)
-	}
 
-	var sum_yield []ast.ParserOut
-	var errors []error
-	for _, l1 := range filecontent {
-		lex := lexer.New([]rune(l1.Text))
+	// Language parsing
+	sum_yield, _ := language_parser.DoParse(filecontent)
 
-		yield, err := parser.New(lex).Parse()
-		fmt.Println(yield)
-		if err != nil {
-			errors = append(errors, err)
-		} else {
-			sum_yield = append(sum_yield, yield.(ast.ParserOut))
-		}
-	}
-	// fmt.Println(sum_yield)
+	// Language AST handling
 	var s Stack
 	s.Expected_indent = 0
+	s.OwnerID = 0
 	s.Entry_indent = -1
 	s.Structurals = &map[string][]ast.ParserOut{}
 	s.Relations = &[]Relation{}
 	s.Items = &[]Item{}
 	s.OwnerList = []string{}
+	s.Name = "BaseContent"
 	s.derive_structurals(0, &sum_yield, &filecontent)
 	s.FixResidual(&sum_yield, &filecontent)
 	s.ExpandAll()
-
-	// os.Exit(2)
-	// derive_structurals(sum_yield, filecontent)
-	// relations, items := derive_structure(sum_yield)
 	derive_types(*s.Relations, s.Items)
-	makegv(*s.Relations, *s.Items)
-	// fmt.Println(items)
-	//// makegraphviz()
+	graph_representation := makegraph(s.Relations, s.Items)
+	// Presentation
+
+	if in_flags.makegv {
+		makegv(graph_representation)
+	}
+
 }

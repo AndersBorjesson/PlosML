@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	// "github.com/dominikbraun/graph"
 	// "github.com/dominikbraun/graph/draw"
 	// "github.com/goccy/go-graphviz"
 	graphviz "github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
+	"gonum.org/v1/gonum/graph"
 	enc "gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/simple"
+	"gonum.org/v1/gonum/graph/topo"
 )
 
 // var a *[]byte
@@ -204,7 +207,7 @@ func getarrows() (map[string]cgraph.ArrowType, map[string]cgraph.ArrowType) {
 	return heads, tails
 }
 
-func makegv(relations []Relation, items []Item) {
+func makegv_2(relations []Relation, items []Item) {
 	gv := graphviz.New()
 	graph, _ := gv.Graph()
 
@@ -238,6 +241,100 @@ func makegv(relations []Relation, items []Item) {
 	}
 	gv2 := graph.SubGraph("cluster_AAA", 2)
 	gv2.CreateNode("Klasse")
+
+	gv.RenderFilename(graph, graphviz.PNG, "graph.png")
+
+}
+
+func makegv(g graph.Directed) {
+	gv := graphviz.New()
+	graph, _ := gv.Graph()
+
+	nodes := make(map[string]*cgraph.Node)
+	heads, tails := getarrows()
+	tmp := g.Nodes()
+	node_ids := []int64{}
+	len_tmp := tmp.Len()
+	for l1 := 0; l1 < len_tmp; l1++ {
+		tmp.Next()
+		n := tmp.Node().(NodeType)
+		node_ids = append(node_ids, n.Id)
+		nodes[n.Name], _ = graph.CreateNode(n.Name)
+		nodes[n.Name].SetLabel(n.HumanName)
+		if n.Type == "P" {
+			nodes[n.Name].SetColor("blue")
+			nodes[n.Name].SetShape("oval")
+		} else if n.Type == "O" {
+			nodes[n.Name].SetColor("green")
+			nodes[n.Name].SetShape("box")
+		} else {
+			nodes[n.Name].SetColor("black")
+			nodes[n.Name].SetShape("none")
+		}
+
+	}
+	order, err := topo.Sort(g)
+	if err != nil {
+		fmt.Println("Handle error here")
+		os.Exit(1)
+	}
+	for _, l1 := range order {
+		id := l1.(NodeType).Id
+		for _, l2 := range node_ids {
+			if l2 != id {
+				has_edge := g.HasEdgeFromTo(id, l2)
+				if has_edge {
+					edge := g.Edge(id, l2)
+					F := edge.(EdgeType).F
+					T := edge.(EdgeType).T
+					e, _ := graph.CreateEdge("", nodes[F.(NodeType).Name], nodes[T.(NodeType).Name])
+					e.SetDir("both")
+					e.SetArrowHead("none")
+					// fmt.Println(l1.Typ)
+					// fmt.Println(edge.(EdgeType).Type, heads[edge.(EdgeType).Type], tails[edge.(EdgeType).Type])
+					e.SetArrowHead(heads[edge.(EdgeType).Type])
+					e.SetArrowTail(tails[edge.(EdgeType).Type])
+					if edge.(EdgeType).Type == "triggers" {
+						e.SetHeadLabel("e")
+					}
+				}
+			}
+		}
+	}
+
+	// gv := graphviz.New()
+	// graph, _ := gv.Graph()
+
+	// nodes := make(map[string]*cgraph.Node)
+	// heads, tails := getarrows()
+	// for _, l1 := range items {
+	// 	nodes[l1.Name], _ = graph.CreateNode(l1.Name)
+	// 	if l1.Typ == "P" {
+	// 		nodes[l1.Name].SetColor("blue")
+	// 		nodes[l1.Name].SetShape("oval")
+	// 	} else if l1.Typ == "O" {
+	// 		nodes[l1.Name].SetColor("green")
+	// 		nodes[l1.Name].SetShape("box")
+	// 	} else {
+	// 		nodes[l1.Name].SetColor("black")
+	// 		nodes[l1.Name].SetShape("none")
+	// 	}
+
+	// }
+	// for _, l1 := range relations {
+	// 	e, _ := graph.CreateEdge("", nodes[l1.From], nodes[l1.To])
+	// 	e.SetDir("both")
+	// 	e.SetArrowHead("none")
+	// 	// fmt.Println(l1.Typ)
+	// 	// fmt.Println(heads[l1.Typ], tails[l1.Typ])
+	// 	e.SetArrowHead(heads[l1.Typ])
+	// 	e.SetArrowTail(tails[l1.Typ])
+	// 	if l1.Typ == "triggers" {
+	// 		e.SetHeadLabel("e")
+	// 	}
+	// }
+	// gv2 := graph.SubGraph("cluster_AAA", 2)
+	// gv2.CreateNode("Klasse")
 
 	gv.RenderFilename(graph, graphviz.PNG, "graph.png")
 
