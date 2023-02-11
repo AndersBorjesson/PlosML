@@ -411,6 +411,7 @@ type NodeType struct {
 	Name      string
 	Owner     string
 	HumanName string
+	Handler   string
 }
 
 func (g NodeType) ID() int64 {
@@ -425,6 +426,7 @@ func NewNode(id int64, name, typ string) graph.Node {
 		Name:      name,
 		Owner:     "",
 		HumanName: tmp[len(tmp)-1],
+		Handler:   fmt.Sprintf("UnknownAgent_%d", id),
 	}
 }
 
@@ -447,18 +449,24 @@ func NewEdge(f, t graph.Node, typ string) graph.Edge {
 }
 func makegraph(relations *[]Relation, items *[]Item) graph.Directed {
 	G := simple.NewDirectedGraph()
-	nodes := make(map[string]graph.Node)
+	nodes := make(map[string]*graph.Node)
 	for i, l1 := range *items {
-		N := NewNode(int64(i), l1.Name, l1.Typ)
-		G.AddNode(N)
-		nodes[l1.Name] = N
+		if nodes[l1.Name] == nil {
+
+			N := NewNode(int64(i), l1.Name, l1.Typ)
+			G.AddNode(N)
+			nodes[l1.Name] = &N
+		}
 	}
 
 	for _, l1 := range *relations {
-		n_f := nodes[l1.From]
-		n_t := nodes[l1.To]
-		t := l1.Typ
+		n_f := (*nodes[l1.From]).(NodeType)
+		n_t := (*nodes[l1.To]).(NodeType)
 
+		t := l1.Typ
+		if t == "handles" {
+			n_t.Handler = n_f.Name
+		}
 		E := NewEdge(n_f, n_t, t)
 		G.SetEdge(E)
 

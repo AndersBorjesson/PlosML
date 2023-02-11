@@ -192,6 +192,7 @@ type Input struct {
 
 type Stack struct {
 	Structurals     *map[string][]ast.ParserOut
+	StrucInd2String *map[int]string
 	Entry_indent    int
 	Expected_indent int
 	IAdd            int
@@ -204,7 +205,67 @@ type Stack struct {
 	OwnerID         int
 }
 
+func (s *Stack) indent_check(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
+	i_max := len(*yield)
+	errs := []string{}
+	for i := istart; i < i_max; i++ {
+		if (*pp)[i].PossibleOwner == true {
+			if (*yield)[i].Typ != "structural" {
+				err := fmt.Sprintf("Indentation error in file %s  around line %d : %s", (*pp)[i].Filename, (*pp)[i].Lineno, (*pp)[i].Text)
+				errs = append(errs, err)
+			}
+		}
+		if (*pp)[i].PossibleOwner == false {
+			if (*yield)[i].Typ == "structural" {
+				err := fmt.Sprintf("Indentation error in file %s  around line %d : %s", (*pp)[i].Filename, (*pp)[i].Lineno, (*pp)[i].Text)
+				errs = append(errs, err)
+			}
+		}
+	}
+	if len(errs) > 0 {
+		for _, l1 := range errs {
+			fmt.Println(l1)
+		}
+
+	}
+}
+
 func (s *Stack) derive_structurals(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
+	(*s.StrucInd2String)[0] = "BaseContent"
+	i_max := len(*yield)
+	for i := istart; i < i_max; i++ {
+		if (*yield)[i].Typ == "structural" {
+
+			if (*pp)[i].PossibleOwner {
+				if (*s.StrucInd2String)[(*pp)[i].OwnerID] == "" {
+					(*s.StrucInd2String)[(*pp)[i].OwnerID] = (*yield)[i].Structural.Name
+					if (*yield)[i].Structural.Operator == "zoomin" {
+						tmp := ast.CallOut{
+							Caller: (*yield)[i].Structural.Name,
+							Calle:  (*yield)[i].Structural.Name}
+
+						tmp2 := ast.ParserOut{Typ: "call",
+							Call: tmp,
+						}
+						id := (*pp)[i].IndentID
+						name := (*s.StrucInd2String)[id]
+						fmt.Println("The name is ", name)
+						(*s.Structurals)[name] = append((*s.Structurals)[name], tmp2)
+					}
+				} else {
+					fmt.Println("Error here")
+
+				}
+
+			}
+		} else {
+			ind := (*s.StrucInd2String)[(*pp)[i].IndentID]
+			(*s.Structurals)[ind] = append((*s.Structurals)[ind], (*yield)[i])
+		}
+		fmt.Println((*pp)[i].PossibleOwner, (*pp)[i].OwnerID, (*pp)[i].Owner, (*pp)[i].IndentID, (*pp)[i].Text)
+	}
+}
+func (s *Stack) derive_structurals_old(istart int, yield *[]ast.ParserOut, pp *[]preprocessor.LineType) {
 	i_max := len(*yield)
 	for i := istart; i < i_max; i++ {
 		// fmt.Println(s.Expected_indent, i, istart, i_max, (*yield)[i].Typ)
@@ -379,12 +440,15 @@ func main() {
 	s.OwnerID = 0
 	s.Entry_indent = -1
 	s.Structurals = &map[string][]ast.ParserOut{}
+	s.StrucInd2String = &map[int]string{}
 	s.Relations = &[]Relation{}
 	s.Items = &[]Item{}
 	s.OwnerList = []string{}
 	s.Name = "BaseContent"
+	s.indent_check(0, &sum_yield, &filecontent)
 	s.derive_structurals(0, &sum_yield, &filecontent)
-	s.FixResidual(&sum_yield, &filecontent)
+
+	//s.FixResidual(&sum_yield, &filecontent)
 	s.ExpandAll()
 	derive_types(*s.Relations, s.Items)
 	graph_representation := makegraph(s.Relations, s.Items)
@@ -393,5 +457,5 @@ func main() {
 	if in_flags.makegv {
 		makegv(graph_representation)
 	}
-
+	// ResolveStructure(graph_representation)
 }
