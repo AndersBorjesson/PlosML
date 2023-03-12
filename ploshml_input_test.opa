@@ -1,6 +1,11 @@
-Bees -> Honey
+A -> B  >- C
 
-Human -< Honey
+class Korv
+    AA -> BB  >- CC
 
-A -> B >- C ->D
-A triggers Arne
+call Korv as Brod
+
+Brod.CC triggers A
+
+Spark handles A
+
