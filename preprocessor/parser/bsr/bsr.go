@@ -12,13 +12,12 @@ package bsr
 import (
 	"bytes"
 	"fmt"
+	"go/token"
+	"ploshml/preprocessor/lexer"
+	"ploshml/preprocessor/parser/slot"
+	"ploshml/preprocessor/parser/symbols"
 	"strings"
 	"unicode/utf8"
-
-	"mdinclude/lexer"
-	"mdinclude/parser/slot"
-	"mdinclude/parser/symbols"
-	"mdinclude/token"
 )
 
 type bsr interface {

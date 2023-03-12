@@ -78,7 +78,6 @@ func (s Preprocessor) Do() {
 
 	for i, d := range filedata {
 		lex := lexer.New([]rune(d))
-		// fmt.Println(lex)
 		a, _ := parser.New(lex).Parse()
 		//fmt.Println("SSS", d, a)
 		if a == nil {
@@ -133,7 +132,7 @@ func (s Preprocessor) Check_ownership() {
 			if i < (len(*s.Textstack) - 1) {
 				if (*s.Textstack)[i].Indent < (*s.Textstack)[i+1].Indent {
 					owner = append(owner, owner[len(owner)-1]+1)
-					fmt.Println("OWNER", owner)
+
 					id_now++
 					indentID = append(indentID, id_now)
 					(*s.Textstack)[i].PossibleOwner = true
@@ -148,22 +147,22 @@ func (s Preprocessor) Check_ownership() {
 
 				} else if (*s.Textstack)[i].Indent > (*s.Textstack)[i+1].Indent {
 					delta := (*s.Textstack)[i].Indent - (*s.Textstack)[i+1].Indent
-					fmt.Println("DELTA", delta, owner, indentID)
+
 					(*s.Textstack)[i].PossibleOwner = false
 					owner = owner[0:(len(owner) - delta)]
 
 					indentID = indentID[0:(len(indentID) - delta)]
-					fmt.Println("DELTA", delta, owner, indentID)
+
 					(*s.Textstack)[i+1].Owner = owner[len(owner)-1]
 					(*s.Textstack)[i+1].IndentID = indentID[len(owner)-1]
-					fmt.Println("DELTA", delta, owner, indentID)
+
 				} else {
-					fmt.Println("This should never happen")
+					fmt.Println("This is an unexpected state that should never happen")
 					os.Exit(2)
 				}
 			}
 		}
-		fmt.Println((*s.Textstack)[i].Text, (*s.Textstack)[i].PossibleOwner, (*s.Textstack)[i].Owner, (*s.Textstack)[i].IndentID)
+		// fmt.Println((*s.Textstack)[i].Text, (*s.Textstack)[i].PossibleOwner, (*s.Textstack)[i].Owner, (*s.Textstack)[i].IndentID)
 	}
 
 }

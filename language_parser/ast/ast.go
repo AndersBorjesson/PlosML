@@ -338,7 +338,7 @@ func Property0(p0 interface{}) (interface{}, error) {
 
 // Alias : as ;
 func Alias0(p0 interface{}) (interface{}, error) {
-	fmt.Println("ast.Alias0 is unimplemented")
+	// fmt.Println("ast.Alias0 is unimplemented")
 	return nil, nil
 }
 
@@ -356,6 +356,6 @@ func Pragma0(p0 interface{}) (interface{}, error) {
 
 // Call : call ;
 func Call0(p0 interface{}) (interface{}, error) {
-	fmt.Println("ast.Call0 is unimplemented")
+	// fmt.Println("ast.Call0 is unimplemented")
 	return nil, nil
 }
