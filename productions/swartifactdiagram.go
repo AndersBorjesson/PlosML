@@ -1,10 +1,9 @@
-package swartifactdiagram
+package productions
 
 import (
 	"fmt"
 	"log"
 	"os"
-	"ploshml/productions"
 	"ploshml/semanticresolver"
 	"strings"
 
@@ -17,8 +16,8 @@ func Name(f string) diagram.Option {
 		o.Name = f
 	}
 }
-func Apa(g graph.Directed) {
-	processes := productions.ResolveStructure(g)
+func SWartifactdiagram(g graph.Directed, processes []graph.Node, procgraph []ProcessGraph) {
+
 	filepath := "ARNE"
 
 	d, err := diagram.New(Name(filepath), diagram.Filename("app"), diagram.Label("App"), diagram.Direction("LR"))
@@ -27,6 +26,12 @@ func Apa(g graph.Directed) {
 
 		log.Fatal(err)
 	}
+	translate := make(map[int64]int)
+	for l1, n := range processes {
+		if n != nil {
+			translate[n.ID()] = l1
+		}
+	}
 	nodes := nodetypes(processes)
 	for _, l1 := range nodes {
 
@@ -34,9 +39,17 @@ func Apa(g graph.Directed) {
 
 			d.Add(l1)
 
-			fmt.Println("DD", d.Nodes())
+			// fmt.Println("DD", d.Nodes())
 		}
 	}
+	for _, n := range procgraph {
+		if n.From != n.To {
+			indf := translate[n.From]
+			indt := translate[n.To]
+			d.Connect(nodes[indf], nodes[indt], diagram.Forward())
+		}
+	}
+
 	if _, err := os.Stat(filepath); os.IsNotExist(err) == false {
 		err := os.RemoveAll(filepath)
 		if err != nil {
@@ -44,6 +57,7 @@ func Apa(g graph.Directed) {
 			os.Exit(1)
 		}
 	}
+
 	d.Render()
 	if err := d.Render(); err != nil {
 		fmt.Println(err)
@@ -70,11 +84,17 @@ func nodetypes(processes []graph.Node) []*diagram.Node {
 			if name == "Unknown" {
 				name = "rack"
 			}
-			tmp := atf[name]().Label(l1.(semanticresolver.NodeType).Handler)
+			handler := tohumanname(l1.(semanticresolver.NodeType).Handler)
+			tmp := atf[name]().Label(handler)
 			r[i] = tmp
 
 		}
 
 	}
 	return r
+}
+
+func tohumanname(in string) string {
+	tmp := strings.Split(in, ".")
+	return tmp[len(tmp)-1]
 }

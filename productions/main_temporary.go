@@ -1,8 +1,9 @@
-package opmimage
+package productions
 
 import (
 	"fmt"
 	"os"
+	"path"
 	"ploshml/semanticresolver"
 
 	// "github.com/dominikbraun/graph"
@@ -245,7 +246,7 @@ func makegv_2(relations []semanticresolver.Relation, items []semanticresolver.It
 
 }
 
-func Makegv(g graph.Directed) {
+func Makegv(g graph.Directed, outpath string) {
 	gv := graphviz.New()
 	graph, _ := gv.Graph()
 
@@ -300,42 +301,12 @@ func Makegv(g graph.Directed) {
 			}
 		}
 	}
+	basename := path.Join(outpath, "base_yield")
 
-	// gv := graphviz.New()
-	// graph, _ := gv.Graph()
-
-	// nodes := make(map[string]*cgraph.Node)
-	// heads, tails := getarrows()
-	// for _, l1 := range items {
-	// 	nodes[l1.Name], _ = graph.CreateNode(l1.Name)
-	// 	if l1.Typ == "P" {
-	// 		nodes[l1.Name].SetColor("blue")
-	// 		nodes[l1.Name].SetShape("oval")
-	// 	} else if l1.Typ == "O" {
-	// 		nodes[l1.Name].SetColor("green")
-	// 		nodes[l1.Name].SetShape("box")
-	// 	} else {
-	// 		nodes[l1.Name].SetColor("black")
-	// 		nodes[l1.Name].SetShape("none")
-	// 	}
-
-	// }
-	// for _, l1 := range relations {
-	// 	e, _ := graph.CreateEdge("", nodes[l1.From], nodes[l1.To])
-	// 	e.SetDir("both")
-	// 	e.SetArrowHead("none")
-	// 	// fmt.Println(l1.Typ)
-	// 	// fmt.Println(heads[l1.Typ], tails[l1.Typ])
-	// 	e.SetArrowHead(heads[l1.Typ])
-	// 	e.SetArrowTail(tails[l1.Typ])
-	// 	if l1.Typ == "triggers" {
-	// 		e.SetHeadLabel("e")
-	// 	}
-	// }
-	// gv2 := graph.SubGraph("cluster_AAA", 2)
-	// gv2.CreateNode("Klasse")
-
-	gv.RenderFilename(graph, graphviz.PNG, "graph.png")
+	gv.RenderFilename(graph, graphviz.PNG, basename+".png")
+	// gv.RenderFilename(graph, graphviz.SVG, basename+".svg")
+	// gv.RenderFilename(graph, graphviz.JPG, basename+".jpg")
+	// gv.RenderFilename(graph, graphviz.XDOT, basename+".dot")
 
 }
 
