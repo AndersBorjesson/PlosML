@@ -1,4 +1,4 @@
-package swartifactdiagram
+package productions
 
 import (
 	"github.com/blushft/go-diagrams/diagram"
