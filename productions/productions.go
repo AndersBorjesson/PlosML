@@ -2,7 +2,9 @@ package productions
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"strings"
 
 	"ploshml/semanticresolver"
 
@@ -10,15 +12,24 @@ import (
 	"gonum.org/v1/gonum/graph/topo"
 )
 
-func Produce(g graph.Directed) {
-	processes, _, procgraph := ResolveStructure(g)
-	SWartifactdiagram(g, processes, procgraph)
+func Produce(g graph.Directed, outpath, projname string) {
+	processes, cyclic, procgraph := ResolveStructure(g)
+	SWartifactdiagram(g, processes, procgraph, outpath, projname)
+	fmt.Println(cyclic, "cyclic")
+	if cyclic == false {
+		Sequencediag(g, processes, procgraph, outpath, projname)
+	}
 }
 func ResolveStructure(g graph.Directed) ([]graph.Node, bool, []ProcessGraph) {
 	processes, objects := ResolveProcessesAndObjects(g)
 	order, cyclic := DeriveOrder(g)
 	procgraph := ResolveProcessOrder(order, processes, objects, g)
+
 	return processes, cyclic, procgraph
+}
+func tohumanname(in string) string {
+	tmp := strings.Split(in, ".")
+	return tmp[len(tmp)-1]
 }
 
 type ProcessGraph struct {
@@ -132,4 +143,20 @@ func ResolveProcessesAndObjects(g graph.Directed) ([]graph.Node, []graph.Node) {
 	}
 	return processes, objects
 
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func RandString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
+func savestring2file(filename, content string) {
+	f, _ := os.Create(filename)
+	defer f.Close()
+	f.Write([]byte(content))
 }

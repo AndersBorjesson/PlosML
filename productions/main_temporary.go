@@ -1,8 +1,6 @@
 package productions
 
 import (
-	"fmt"
-	"os"
 	"path"
 	"ploshml/semanticresolver"
 
@@ -12,7 +10,6 @@ import (
 	graphviz "github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
 	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/topo"
 )
 
 // var a *[]byte
@@ -246,7 +243,7 @@ func makegv_2(relations []semanticresolver.Relation, items []semanticresolver.It
 
 }
 
-func Makegv(g graph.Directed, outpath string) {
+func Makegv(g graph.Directed, outpath, projname string) {
 	gv := graphviz.New()
 	graph, _ := gv.Graph()
 
@@ -273,11 +270,8 @@ func Makegv(g graph.Directed, outpath string) {
 		}
 
 	}
-	order, err := topo.Sort(g)
-	if err != nil {
-		fmt.Println("Structure is cyclic")
-		os.Exit(1)
-	}
+	order, _ := DeriveOrder(g)
+
 	for _, l1 := range order {
 		id := l1.(semanticresolver.NodeType).Id
 		for _, l2 := range node_ids {
@@ -301,7 +295,7 @@ func Makegv(g graph.Directed, outpath string) {
 			}
 		}
 	}
-	basename := path.Join(outpath, "base_yield")
+	basename := path.Join(outpath, projname+"_base_yield")
 
 	gv.RenderFilename(graph, graphviz.PNG, basename+".png")
 	// gv.RenderFilename(graph, graphviz.SVG, basename+".svg")

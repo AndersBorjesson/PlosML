@@ -2,8 +2,8 @@ package productions
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"path"
 	"ploshml/semanticresolver"
 	"strings"
 
@@ -16,15 +16,14 @@ func Name(f string) diagram.Option {
 		o.Name = f
 	}
 }
-func SWartifactdiagram(g graph.Directed, processes []graph.Node, procgraph []ProcessGraph) {
+func SWartifactdiagram(g graph.Directed, processes []graph.Node, procgraph []ProcessGraph, outpath, projname string) {
 
-	filepath := "ARNE"
-
-	d, err := diagram.New(Name(filepath), diagram.Filename("app"), diagram.Label("App"), diagram.Direction("LR"))
+	filepath := path.Join(outpath, projname+"_swa")
+	d, err := diagram.New(Name(filepath), diagram.Filename(projname), diagram.Label(projname), diagram.Direction("LR"))
 
 	if err != nil {
-
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
 	translate := make(map[int64]int)
 	for l1, n := range processes {
@@ -61,7 +60,7 @@ func SWartifactdiagram(g graph.Directed, processes []graph.Node, procgraph []Pro
 	d.Render()
 	if err := d.Render(); err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		return
 	}
 
 }
@@ -92,9 +91,4 @@ func nodetypes(processes []graph.Node) []*diagram.Node {
 
 	}
 	return r
-}
-
-func tohumanname(in string) string {
-	tmp := strings.Split(in, ".")
-	return tmp[len(tmp)-1]
 }

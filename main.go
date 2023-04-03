@@ -107,9 +107,9 @@ func main() {
 
 	if *in_flags.makegv {
 		fmt.Println("Starting production of structural image")
-		productions.Makegv(graph_representation, *in_flags.outpath)
+		productions.Makegv(graph_representation, *in_flags.outpath, *in_flags.projectname)
 		fmt.Println("Structural image production successful")
 	}
-	productions.Produce(graph_representation)
+	productions.Produce(graph_representation, *in_flags.outpath, *in_flags.projectname)
 	// ResolveStructure(graph_representation)
 }
